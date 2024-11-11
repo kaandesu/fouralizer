@@ -19,29 +19,31 @@ int main(void) {
   InitWindow(WIDTH, HEIGHT, "raylib example - continuous sine and cosine wave");
   SetTargetFPS(60);
   Camera camera = {0};
-  camera.position = (Vector3){-2, 2, 5};
+  camera.position = (Vector3){-2, 2, 3};
   camera.target = (Vector3){0, 0, 0};
   camera.projection = CAMERA_PERSPECTIVE;
   camera.fovy = 60;
   camera.up = (Vector3){0, 1, 0};
 
-  Vector3 pointSinPos = {0, 0, 0};
-  Vector3 pointCosPos = {0, 0, 0};
-  Vector3 pointCirclePos = {0, 0, 0};
+  Vector3 pointSinPos = (Vector3){0, 0, 0};
+  Vector3 pointCosPos = (Vector3){AMPLITUDE, 0, 0};
+  Vector3 pointCirclePos = (Vector3){AMPLITUDE, 0, 0};
 
   Vector3 sinPoints[TOTAL_POINTS];
   Vector3 cosPoints[TOTAL_POINTS];
+  Vector3 funcPoints[TOTAL_POINTS];
 
   int frameNum = 0;
   Color bg = (Color){46, 46, 46, 255};
 
   for (int i = 0; i < TOTAL_POINTS; i++) {
-    sinPoints[i] = (Vector3){0, 0, 0};
-    cosPoints[i] = (Vector3){0, 0, 0};
+    sinPoints[i] = pointSinPos;
+    cosPoints[i] = pointCosPos;
+    funcPoints[i] = pointCirclePos;
   }
 
   while (!WindowShouldClose()) {
-    UpdateCamera(&camera, CAMERA_FIRST_PERSON);
+    // UpdateCamera(&camera, CAMERA_FIRST_PERSON);
     BeginDrawing();
     ClearBackground(bg);
     DrawFPS(10, 10);
@@ -54,13 +56,17 @@ int main(void) {
     pointCirclePos.y = pointSinPos.y;
     pointCirclePos.x = pointCosPos.x;
 
-    /* Draw indicators */
+    /* Draw Spherical Indicators */
     DrawSphere(pointSinPos, .1, RED);
-    DrawLine3D((Vector3){0, -AMPLITUDE, 0}, (Vector3){0, AMPLITUDE, 0}, RED);
     DrawSphere(pointCosPos, .1, YELLOW);
-    DrawLine3D((Vector3){-AMPLITUDE, 0, 0}, (Vector3){AMPLITUDE, 0, 0}, YELLOW);
     DrawSphere(pointCirclePos, .1, GREEN);
-    DrawCircle3D((Vector3){0, 0, 0}, AMPLITUDE, (Vector3){0, 0, 0}, 0, GREEN);
+
+    /* Axis & Circle lines */
+    DrawLine3D((Vector3){0, -AMPLITUDE, 0}, (Vector3){0, AMPLITUDE, 0}, WHITE);
+    DrawLine3D((Vector3){-AMPLITUDE, 0, 0}, (Vector3){AMPLITUDE, 0, 0}, WHITE);
+    DrawCircle3D((Vector3){0, 0, 0}, AMPLITUDE, (Vector3){0, 0, 0}, 0, WHITE);
+
+    /* Distance lines */
     DrawLine3D(pointCirclePos, pointSinPos, WHITE);
     DrawLine3D(pointCirclePos, pointCosPos, WHITE);
 
@@ -71,10 +77,12 @@ int main(void) {
       ShiftVector3By(sinPoints);
       AddNewVector(cosPoints, pointCosPos);
       ShiftVector3By(cosPoints);
+      AddNewVector(funcPoints, pointCirclePos);
+      ShiftVector3By(funcPoints);
       frameNum = 0;
     }
 
-    /* Draw continuous sine wave */
+    /* Draw continuous sine & cosine wave */
     rlBegin(RL_LINES);
     for (int i = 0; i < TOTAL_POINTS - 1; i++) {
       rlColor3f(1.0f, 0.0f, 0.0f);
@@ -84,6 +92,10 @@ int main(void) {
       rlColor3f(1.0f, 1.0f, 0.0f);
       rlVertex3f(cosPoints[i].x, cosPoints[i].y, cosPoints[i].z);
       rlVertex3f(cosPoints[i + 1].x, cosPoints[i + 1].y, cosPoints[i + 1].z);
+
+      rlColor3f(0.0f, 1.0f, 0.0f);
+      rlVertex3f(funcPoints[i].x, funcPoints[i].y, funcPoints[i].z);
+      rlVertex3f(funcPoints[i + 1].x, funcPoints[i + 1].y, funcPoints[i + 1].z);
     }
     rlEnd();
 
