@@ -16,6 +16,7 @@ float AMPLITUDE = 1.0f;
 
 void AddNewVector(Vector3 *vector3, Vector3 new);
 void ShiftVector3By(Vector3 *vector3);
+float CustomFunction(float t);
 
 int main(void) {
   InitWindow(WIDTH, HEIGHT, "fouralizer - Fourier Series Visualizer");
@@ -41,6 +42,7 @@ int main(void) {
   bool showCosine = true;
   bool showFunc = true;
   bool showGrid = true;
+  bool showControls = true;
 
   int frameNum = 0;
   Color bg = (Color){36, 36, 36, 255};
@@ -172,6 +174,7 @@ int main(void) {
 
     if (IsKeyPressed(KEY_LEFT)) {
       freq_d -= 0.25f;
+      rotation = 0;
     }
 
     if (IsKeyPressed(KEY_G)) {
@@ -186,45 +189,67 @@ int main(void) {
       camera.position.y -= 0.5;
     }
 
+    if (IsKeyPressed(KEY_H)) {
+      showControls = !showControls;
+    }
+
+    if (IsKeyPressed(KEY_C)) {
+      for (int i = 0; i < TOTAL_POINTS; i++) {
+        sinPoints[i] = (Vector3){0, 0, 0};
+        cosPoints[i] = (Vector3){0, 0, 0};
+        funcPoints[i] = (Vector3){0, 0, 0};
+      }
+    }
+
     if (IsKeyPressed(KEY_RIGHT)) {
       freq_d += 0.25f;
+      rotation = 0;
     }
 
     if (IsKeyPressed(KEY_R)) {
       rotation = 0;
       freq_d = 0;
 
-      pointSinPos = (Vector3){0, 0, 0};
-      pointCosPos = (Vector3){0, 0, 0};
-      pointCirclePos = (Vector3){0, 0, 0};
       for (int i = 0; i < TOTAL_POINTS; i++) {
-        sinPoints[i] = pointSinPos;
-        cosPoints[i] = pointCosPos;
-        funcPoints[i] = pointCirclePos;
+        sinPoints[i] = (Vector3){0, 0, 0};
+        cosPoints[i] = (Vector3){0, 0, 0};
+        funcPoints[i] = (Vector3){0, 0, 0};
       }
     }
     DrawText(TextFormat("Spin Frequency: %.2f", freq_d), 10, 20, 15, WHITE);
 
     DrawText(TextFormat("Signal Frequency: %.2f", FREQUENCY), 10, 60, 15,
              WHITE);
-    DrawText("CONTROLS:", 10, 35 + OFFSET_UI, 16, LIGHTGRAY);
-    DrawText("Left Arrow: Decrease Spin Frequency ", 10, 60 + OFFSET_UI, 15,
-             lightGreen);
-    DrawText("Right Arrow: Increase Spin Frequency ", 10, 80 + OFFSET_UI, 15,
-             lightRed);
-    DrawText("R: Reset Spin Frequency ", 10, 105 + OFFSET_UI, 15, LIGHTGRAY);
-    DrawText("Up Arrow: Increase Camera Y ", 10, 125 + OFFSET_UI, 15,
-             lightGreen);
-    DrawText("Down Arrow: Decrease Camera Y ", 10, 145 + OFFSET_UI, 15,
-             LIGHTGRAY);
-    DrawText("G: Toggle Grid ", 10, 165 + OFFSET_UI, 15, LIGHTGRAY);
-    DrawText("F: Freeze Frame ", 10, 185 + OFFSET_UI, 15, LIGHTGRAY);
+
+    if (showControls) {
+      DrawText("Help:", 10, 35 + OFFSET_UI, 16, WHITE);
+      DrawText("Left Arrow: Decrease Spin Frequency ", 10, 60 + OFFSET_UI, 15,
+               lightGreen);
+      DrawText("Right Arrow: Increase Spin Frequency ", 10, 80 + OFFSET_UI, 15,
+               lightRed);
+      DrawText("R: Reset Spin Frequency ", 10, 105 + OFFSET_UI, 15, LIGHTGRAY);
+      DrawText("Up Arrow: Increase Camera Y ", 10, 125 + OFFSET_UI, 15,
+               lightGreen);
+      DrawText("Down Arrow: Decrease Camera Y ", 10, 145 + OFFSET_UI, 15,
+               lightRed);
+      DrawText("G: Toggle Grid ", 10, 165 + OFFSET_UI, 15, LIGHTGRAY);
+      DrawText("H: Toggle Help", 10, 185 + OFFSET_UI, 15, LIGHTGRAY);
+      DrawText("C: Clean lines", 10, 205 + OFFSET_UI, 15, LIGHTGRAY);
+      DrawText("1: Toggle Real Part ", 10, 230 + OFFSET_UI, 15, YELLOW);
+      DrawText("2: Toggle Imag Part", 10, 250 + OFFSET_UI, 15, RED);
+      DrawText("3: Toggle Combined", 10, 270 + OFFSET_UI, 15, GREEN);
+    }
 
     DrawText("https://github.com/kaandesu/fouralizer", WIDTH - 325, HEIGHT - 30,
              15, RAYWHITE);
   }
   CloseWindow();
   return EXIT_SUCCESS;
+}
+
+float CustomFunction(float t) {
+  // Example: Combine multiple sine functions
+  return sin(2 * PI * 3 * t) + sin(2 * PI * 6 * t);
 }
 
 void AddNewVector(Vector3 *vector3, Vector3 new) {
