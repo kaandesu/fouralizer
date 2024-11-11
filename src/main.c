@@ -1,27 +1,27 @@
 #include "raylib.h"
 #include "rlgl.h"
 #include <math.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #define WIDTH 1200
 #define HEIGHT 675
 #define OFFSET_UI 85
 
-float FREQUENCY = 2.0f;
+float FREQUENCY = 5.0f;
 float AMPLITUDE = 1.0f;
 
 #define FD 3
-#define TOTAL_POINTS 200
+#define TOTAL_POINTS 1000
 
 void AddNewVector(Vector3 *vector3, Vector3 new);
 void ShiftVector3By(Vector3 *vector3);
 
 int main(void) {
   InitWindow(WIDTH, HEIGHT, "fouralizer - Fourier Series Visualizer");
-  SetTargetFPS(60);
   Camera camera = {0};
   camera.position = (Vector3){-2, .5, 3};
-  camera.target = (Vector3){0, .5, 0};
+  camera.target = (Vector3){0, .0, 0};
   camera.projection = CAMERA_PERSPECTIVE;
   camera.fovy = 60;
   camera.up = (Vector3){0, 1, 0};
@@ -34,8 +34,16 @@ int main(void) {
   Vector3 cosPoints[TOTAL_POINTS];
   Vector3 funcPoints[TOTAL_POINTS];
 
+  Color lightGreen = (Color){191, 255, 191, 255};
+  Color lightRed = (Color){255, 191, 191, 255};
+
+  bool showSine = true;
+  bool showCosine = true;
+  bool showFunc = true;
+  bool showGrid = true;
+
   int frameNum = 0;
-  Color bg = (Color){46, 46, 46, 255};
+  Color bg = (Color){36, 36, 36, 255};
 
   for (int i = 0; i < TOTAL_POINTS; i++) {
     sinPoints[i] = pointSinPos;
@@ -46,6 +54,7 @@ int main(void) {
   Vector3 axisRot = (Vector3){0, 0, 0};
   float rotation = 0;
   float freq_d = -0.0f;
+  double currentTime = 0;
 
   while (!WindowShouldClose()) {
     UpdateCamera(&camera, CAMERA_FIRST_PERSON);
@@ -55,38 +64,44 @@ int main(void) {
     DrawFPS(10, HEIGHT - 35);
 
     BeginMode3D(camera);
+    if (showGrid)
+      DrawGrid(20, 1);
+    currentTime = GetTime();
 
     rotation -= freq_d * GetFrameTime();
     /* Update point positions based on sine and cosine functions */
-    pointSinPos.y = AMPLITUDE * sin(GetTime() * FREQUENCY);
-    pointCosPos.x = AMPLITUDE * cos(GetTime() * FREQUENCY);
+    pointSinPos.y = AMPLITUDE * sin(currentTime * FREQUENCY);
+    pointCosPos.x = AMPLITUDE * cos(currentTime * FREQUENCY);
 
-    pointSinPos.x = AMPLITUDE * -sin(rotation) * sin(GetTime() * FREQUENCY);
-    pointSinPos.y = AMPLITUDE * cos(rotation) * sin(GetTime() * FREQUENCY);
+    pointSinPos.x = AMPLITUDE * -sin(rotation) * sin(currentTime * FREQUENCY);
+    pointSinPos.y = AMPLITUDE * cos(rotation) * sin(currentTime * FREQUENCY);
 
-    pointCosPos.x = AMPLITUDE * cos(GetTime() * FREQUENCY) * cos(rotation);
-    pointCosPos.y = AMPLITUDE * cos(GetTime() * FREQUENCY) * sin(rotation);
+    pointCosPos.x = AMPLITUDE * cos(currentTime * FREQUENCY) * cos(rotation);
+    pointCosPos.y = AMPLITUDE * cos(currentTime * FREQUENCY) * sin(rotation);
 
     pointCirclePos.y = pointSinPos.y;
     pointCirclePos.x = pointCosPos.x;
 
     /* Draw Spherical Indicators */
-    DrawSphere(pointSinPos, .1, RED);
-    DrawSphere(pointCosPos, .1, YELLOW);
-    DrawSphere(pointCirclePos, .1, GREEN);
+    if (showSine)
+      DrawSphere(pointSinPos, .1, RED);
+    if (showCosine)
+      DrawSphere(pointCosPos, .1, YELLOW);
+    if (showFunc)
+      DrawSphere(pointCirclePos, .1, GREEN);
 
     /* Axis & Circle lines ROTATING */
     float x1, x2, y1, y2;
-    x1 = cos(GetTime() * freq_d);
-    y1 = -AMPLITUDE * sin(GetTime() * freq_d);
-    x2 = sin((GetTime() * freq_d) - PI / 2);
-    y2 = cos((GetTime() * freq_d) - PI / 2);
+    x1 = cos(currentTime * freq_d);
+    y1 = -AMPLITUDE * sin(currentTime * freq_d);
+    x2 = sin((currentTime * freq_d) - PI / 2);
+    y2 = cos((currentTime * freq_d) - PI / 2);
 
     float x1_2, x2_2, y1_2, y2_2;
-    x1_2 = -AMPLITUDE * sin(GetTime() * freq_d);
-    y1_2 = -1 * cos(GetTime() * freq_d);
-    x2_2 = cos((GetTime() * freq_d) - PI / 2);
-    y2_2 = -sin((GetTime() * freq_d) - PI / 2);
+    x1_2 = -AMPLITUDE * sin(currentTime * freq_d);
+    y1_2 = -1 * cos(currentTime * freq_d);
+    x2_2 = cos((currentTime * freq_d) - PI / 2);
+    y2_2 = -sin((currentTime * freq_d) - PI / 2);
     DrawLine3D((Vector3){x1, y1, 0}, (Vector3){x2, y2, 0}, WHITE);
     DrawLine3D((Vector3){x1_2, y1_2, 0}, (Vector3){x2_2, y2_2, 0}, WHITE);
 
@@ -98,12 +113,15 @@ int main(void) {
     DrawCircle3D((Vector3){0, 0, 0}, AMPLITUDE, (Vector3){0, 0, 0}, 0, WHITE);
 
     /* Distance lines */
-    DrawLine3D(pointCirclePos, pointSinPos, WHITE);
-    DrawLine3D(pointCirclePos, pointCosPos, WHITE);
+
+    if (showCosine && showSine) {
+      DrawLine3D(pointCirclePos, pointSinPos, WHITE);
+      DrawLine3D(pointCirclePos, pointCosPos, WHITE);
+    }
 
     /* Shift points and add new positions */
     frameNum++;
-    if (frameNum >= 2) {
+    if (frameNum >= GetFPS() * 2 / 60) {
       AddNewVector(sinPoints, pointSinPos);
       ShiftVector3By(sinPoints);
       AddNewVector(cosPoints, pointCosPos);
@@ -116,48 +134,69 @@ int main(void) {
     /* Draw continuous sine & cosine wave */
     rlBegin(RL_LINES);
     for (int i = 0; i < TOTAL_POINTS - 1; i++) {
-      rlColor3f(1.0f, 0.0f, 0.0f);
-      rlVertex3f(sinPoints[i].x, sinPoints[i].y, sinPoints[i].z);
-      rlVertex3f(sinPoints[i + 1].x, sinPoints[i + 1].y, sinPoints[i + 1].z);
+      if (showSine) {
+        rlColor3f(1.0f, 0.0f, 0.0f);
+        rlVertex3f(sinPoints[i].x, sinPoints[i].y, sinPoints[i].z);
+        rlVertex3f(sinPoints[i + 1].x, sinPoints[i + 1].y, sinPoints[i + 1].z);
+      }
 
-      rlColor3f(1.0f, 1.0f, 0.0f);
-      rlVertex3f(cosPoints[i].x, cosPoints[i].y, cosPoints[i].z);
-      rlVertex3f(cosPoints[i + 1].x, cosPoints[i + 1].y, cosPoints[i + 1].z);
+      if (showCosine) {
+        rlColor3f(1.0f, 1.0f, 0.0f);
+        rlVertex3f(cosPoints[i].x, cosPoints[i].y, cosPoints[i].z);
+        rlVertex3f(cosPoints[i + 1].x, cosPoints[i + 1].y, cosPoints[i + 1].z);
+      }
 
-      rlColor3f(0.0f, 1.0f, 0.0f);
-      rlVertex3f(funcPoints[i].x, funcPoints[i].y, funcPoints[i].z);
-      rlVertex3f(funcPoints[i + 1].x, funcPoints[i + 1].y, funcPoints[i + 1].z);
+      if (showFunc) {
+        rlColor3f(0.0f, 1.0f, 0.0f);
+        rlVertex3f(funcPoints[i].x, funcPoints[i].y, funcPoints[i].z);
+        rlVertex3f(funcPoints[i + 1].x, funcPoints[i + 1].y,
+                   funcPoints[i + 1].z);
+      }
     }
     rlEnd();
 
     EndMode3D();
     EndDrawing();
 
+    if (IsKeyPressed(KEY_ONE)) {
+      showCosine = !showCosine;
+    }
+
+    if (IsKeyPressed(KEY_TWO)) {
+      showSine = !showSine;
+    }
+
+    if (IsKeyPressed(KEY_THREE)) {
+      showFunc = !showFunc;
+    }
+
     if (IsKeyPressed(KEY_LEFT)) {
-      rotation = 0;
-      freq_d -= 0.2f;
-      for (int i = 0; i < TOTAL_POINTS; i++) {
-        sinPoints[i] = pointSinPos;
-        cosPoints[i] = pointCosPos;
-        funcPoints[i] = pointCirclePos;
-      }
+      freq_d -= 0.25f;
+    }
+
+    if (IsKeyPressed(KEY_G)) {
+      showGrid = !showGrid;
+    }
+
+    if (IsKeyPressed(KEY_UP)) {
+      camera.position.y += 0.5;
+    }
+
+    if (IsKeyPressed(KEY_DOWN)) {
+      camera.position.y -= 0.5;
     }
 
     if (IsKeyPressed(KEY_RIGHT)) {
-      rotation = 0;
-      freq_d += 0.2f;
-
-      for (int i = 0; i < TOTAL_POINTS; i++) {
-        sinPoints[i] = pointSinPos;
-        cosPoints[i] = pointCosPos;
-        funcPoints[i] = pointCirclePos;
-      }
+      freq_d += 0.25f;
     }
 
     if (IsKeyPressed(KEY_R)) {
       rotation = 0;
       freq_d = 0;
 
+      pointSinPos = (Vector3){0, 0, 0};
+      pointCosPos = (Vector3){0, 0, 0};
+      pointCirclePos = (Vector3){0, 0, 0};
       for (int i = 0; i < TOTAL_POINTS; i++) {
         sinPoints[i] = pointSinPos;
         cosPoints[i] = pointCosPos;
@@ -168,12 +207,18 @@ int main(void) {
 
     DrawText(TextFormat("Signal Frequency: %.2f", FREQUENCY), 10, 60, 15,
              WHITE);
-    DrawText("CONTROLS:", 10, 20 + OFFSET_UI, 15, LIGHTGRAY);
-    DrawText("Left Arrow: Decrease Spin Frequency ", 10, 50 + OFFSET_UI, 15,
+    DrawText("CONTROLS:", 10, 35 + OFFSET_UI, 16, LIGHTGRAY);
+    DrawText("Left Arrow: Decrease Spin Frequency ", 10, 60 + OFFSET_UI, 15,
+             lightGreen);
+    DrawText("Right Arrow: Increase Spin Frequency ", 10, 80 + OFFSET_UI, 15,
+             lightRed);
+    DrawText("R: Reset Spin Frequency ", 10, 105 + OFFSET_UI, 15, LIGHTGRAY);
+    DrawText("Up Arrow: Increase Camera Y ", 10, 125 + OFFSET_UI, 15,
+             lightGreen);
+    DrawText("Down Arrow: Decrease Camera Y ", 10, 145 + OFFSET_UI, 15,
              LIGHTGRAY);
-    DrawText("Right Arrow: Increase Spin Frequency ", 10, 75 + OFFSET_UI, 15,
-             LIGHTGRAY);
-    DrawText("R: Reset Spin Frequency ", 10, 100 + OFFSET_UI, 15, LIGHTGRAY);
+    DrawText("G: Toggle Grid ", 10, 165 + OFFSET_UI, 15, LIGHTGRAY);
+    DrawText("F: Freeze Frame ", 10, 185 + OFFSET_UI, 15, LIGHTGRAY);
 
     DrawText("https://github.com/kaandesu/fouralizer", WIDTH - 325, HEIGHT - 30,
              15, RAYWHITE);
