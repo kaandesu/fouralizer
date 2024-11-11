@@ -19,8 +19,8 @@ int main(void) {
   InitWindow(WIDTH, HEIGHT, "raylib example - continuous sine and cosine wave");
   SetTargetFPS(60);
   Camera camera = {0};
-  camera.position = (Vector3){-2, 2, 3};
-  camera.target = (Vector3){0, 0, 0};
+  camera.position = (Vector3){-2, .5, 3};
+  camera.target = (Vector3){0, .5, 0};
   camera.projection = CAMERA_PERSPECTIVE;
   camera.fovy = 60;
   camera.up = (Vector3){0, 1, 0};
@@ -43,7 +43,8 @@ int main(void) {
   }
 
   while (!WindowShouldClose()) {
-    // UpdateCamera(&camera, CAMERA_FIRST_PERSON);
+    UpdateCamera(&camera, CAMERA_FIRST_PERSON);
+    DisableCursor();
     BeginDrawing();
     ClearBackground(bg);
     DrawFPS(10, 10);
