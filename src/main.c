@@ -49,7 +49,7 @@ int main(void) {
 
   while (!WindowShouldClose()) {
     UpdateCamera(&camera, CAMERA_FIRST_PERSON);
-    DisableCursor();
+    // DisableCursor();
     BeginDrawing();
     ClearBackground(bg);
     DrawFPS(10, HEIGHT - 35);
