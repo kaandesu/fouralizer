@@ -6,6 +6,10 @@ Fourier series visualiser
   <img width="520" src="./data/demo.gif">
 </div>
 
+<div align="center">
+  <img width="100%" src="./data/ss.png">
+</div>
+
 > [!IMPORTANT]
 > fouralizer is currently under development.
 > Gif above might not reflect the current progress.
