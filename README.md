@@ -8,7 +8,7 @@ Fourier series visualiser
 
 > [!IMPORTANT]
 > fouralizer is currently under development.
-> Gif above might not doesn't reflect the current progress.
+> Gif above might not reflect the current progress.
 > Will update on contributionsevery minor version update.
 
 ### Contribution
