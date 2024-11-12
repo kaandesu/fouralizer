@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "raymath.h"
 #include "rlgl.h"
 #include <math.h>
 #include <stdbool.h>
@@ -8,14 +9,16 @@
 #define HEIGHT 675
 #define OFFSET_UI 85
 #define PANEL_RATIO 2.0f
+#define FOVY 60
+#define UPVEC3                                                                 \
+  (Vector3) { 0, 1, 0 }
 #define ZEROVEC3                                                               \
   (Vector3) { 0, 0, 0 }
 
 float FREQUENCY = 5.0f;
 float AMPLITUDE = 1.0f;
 
-#define FD 3
-#define TOTAL_POINTS 1000
+#define TOTAL_POINTS 300
 
 void AddNewVector(Vector3 *vector3, Vector3 new);
 void ShiftVector3By(Vector3 *vector3);
@@ -69,8 +72,13 @@ float graph2Height = PANEL_RATIO;
 
 Color bg = (Color){45, 45, 45, 255};
 
+int screenWidth, screenHeight;
+
 int main(void) {
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+
   InitWindow(WIDTH, HEIGHT, "fouralizer - Fourier Series Visualizer");
+  // DisableCursor();
   renderTexture = LoadRenderTexture(WIDTH / screen1Width, HEIGHT);
   graph1RenderTexture =
       LoadRenderTexture(WIDTH / graph1Width, HEIGHT / graph1Height);
@@ -80,14 +88,18 @@ int main(void) {
   camera.position = (Vector3){-2, .5, 3};
   camera.target = ZEROVEC3;
   camera.projection = CAMERA_PERSPECTIVE;
-  camera.fovy = 60;
-  camera.up = (Vector3){0, 1, 0};
+  camera.fovy = FOVY;
+  camera.up = UPVEC3;
 
-  cameraStatic.position = (Vector3){0, 10, 0};
-  cameraStatic.target = (Vector3){0, 0, 0};
-  cameraStatic.projection = CAMERA_PERSPECTIVE; // Perspective projection
-  cameraStatic.fovy = 60;
-  cameraStatic.up = (Vector3){0, 0, -1};
+  cameraStatic.position = (Vector3){-.01, 4, 0};
+  cameraStatic.target = (Vector3){0, -0, 0};
+  cameraStatic.projection = CAMERA_PERSPECTIVE;
+  cameraStatic.fovy = FOVY;
+  cameraStatic.up = UPVEC3;
+
+  Matrix rotationMatrix = MatrixRotate(camera.up, 90 * DEG2RAD);
+  Vector3 direction = Vector3Transform(camera.target, rotationMatrix);
+  camera.target = direction;
 
   pointSinPos = ZEROVEC3;
   pointCosPos = ZEROVEC3;
@@ -128,11 +140,11 @@ int main(void) {
     ClearBackground(bg);
 
     BeginTextureMode(renderTexture);
-    ClearBackground(bg);
+    ClearBackground(BLACK);
     DrawFPS(10, HEIGHT - 35);
     BeginMode3D(camera);
     if (showGrid)
-      DrawGrid(20, 1);
+      DrawGrid(12, 1);
     DrawWaveIndicators();
     DrawAxisLines();
     /* Draw continuous sine & cosine wave */
@@ -144,36 +156,61 @@ int main(void) {
     BeginTextureMode(graph1RenderTexture);
     ClearBackground(BLACK);
     BeginMode3D(cameraStatic);
-    DrawGrid(10, 1);
+    DrawGrid(30, 1);
+    rlBegin(RL_LINES);
+    for (int i = 0; i < TOTAL_POINTS - 1; i++) {
+      rlColor3f(0.0f, 1.0f, 0.0f);
+      rlVertex3f(funcPoints[i].x, 0, funcPoints[i].z);
+      rlVertex3f(funcPoints[i + 1].x, 0, funcPoints[i + 1].z);
+    }
+    rlEnd();
     EndMode3D();
     EndTextureMode();
 
     BeginTextureMode(graph2RenderTexture);
     ClearBackground(BLACK);
     BeginMode3D(cameraStatic);
-    DrawGrid(10, 1);
+    DrawGrid(30, 1);
+    rlBegin(RL_LINES);
+    for (int i = 0; i < TOTAL_POINTS - 1; i++) {
+      rlColor3f(0.0f, 1.0f, 0.0f);
+      rlVertex3f(funcPoints[i].y, 0, funcPoints[i].z);
+      rlVertex3f(funcPoints[i + 1].y, 0, funcPoints[i + 1].z);
+    }
     EndMode3D();
     EndTextureMode();
 
+    float padding = 20.0f;
+
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+
     DrawTexturePro(graph1RenderTexture.texture,
-                   (Rectangle){0, 0, graph1RenderTexture.texture.width,
+                   (Rectangle){0, 0,
+                               graph1RenderTexture.texture.width - 2 * padding,
                                -graph1RenderTexture.texture.height},
-                   (Rectangle){WIDTH / 2.0f, 0, WIDTH / graph1Width,
-                               -1 * HEIGHT / graph1Height},
+                   (Rectangle){padding + (screenWidth / 2.0f), padding,
+                               (screenWidth / graph1Width) - 2 * padding,
+                               (-1 * screenHeight / graph1Height) + (padding)},
                    (Vector2){0, 0}, 0, WHITE);
 
-    DrawTexturePro(graph2RenderTexture.texture,
-                   (Rectangle){0, 0, graph2RenderTexture.texture.width,
-                               -graph2RenderTexture.texture.height},
-                   (Rectangle){WIDTH / 2.0f, HEIGHT / 2.0f, WIDTH / graph2Width,
-                               -1 * HEIGHT / graph2Height},
-                   (Vector2){0, 0}, 0, WHITE);
+    DrawTexturePro(
+        graph2RenderTexture.texture,
+        (Rectangle){1, 0, graph2RenderTexture.texture.width - 2 * padding,
+                    -graph2RenderTexture.texture.height},
+        (Rectangle){padding + (screenWidth / 2.0f),
+                    (screenHeight / 2.0f) + padding,
+                    (screenWidth / graph2Width) - 2 * padding,
+                    (-1 * screenHeight / graph2Height) + (2 * padding)},
+        (Vector2){0, 0}, 0, WHITE);
 
     /* Keep this one at the very bottom, so in front */
     DrawTexturePro(renderTexture.texture,
-                   (Rectangle){0, 0, renderTexture.texture.width,
+                   (Rectangle){0, 0, renderTexture.texture.width - padding,
                                -renderTexture.texture.height},
-                   (Rectangle){0, 0, WIDTH / screen1Width, -1 * HEIGHT},
+                   (Rectangle){padding, padding,
+                               (screenWidth / screen1Width) - padding,
+                               (-1 * screenHeight) + (2 * padding)},
                    (Vector2){0, 0}, 0, WHITE);
 
     EndDrawing();
