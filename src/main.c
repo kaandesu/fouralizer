@@ -7,6 +7,9 @@
 #define WIDTH 1200
 #define HEIGHT 675
 #define OFFSET_UI 85
+#define PANEL_RATIO 2.0f
+#define ZEROVEC3                                                               \
+  (Vector3) { 0, 0, 0 }
 
 float FREQUENCY = 5.0f;
 float AMPLITUDE = 1.0f;
@@ -39,6 +42,7 @@ Vector3 cosPoints[TOTAL_POINTS];
 Vector3 funcPoints[TOTAL_POINTS];
 
 Camera camera = {0};
+Camera cameraStatic = {0};
 
 Color lightGreen = (Color){191, 255, 191, 255};
 Color lightRed = (Color){255, 191, 191, 255};
@@ -50,25 +54,44 @@ Vector3 pointSinPos;
 Vector3 pointCosPos;
 Vector3 pointFuncPos;
 
-RenderTexture renderTexture = {0};
-float screen1Width = 2.0f;
 bool fullwidth = false;
+
+RenderTexture renderTexture = {0};
+float screen1Width = PANEL_RATIO;
+
+RenderTexture graph1RenderTexture = {0};
+float graph1Width = PANEL_RATIO;
+float graph1Height = PANEL_RATIO;
+
+RenderTexture graph2RenderTexture = {0};
+float graph2Width = PANEL_RATIO;
+float graph2Height = PANEL_RATIO;
 
 Color bg = (Color){45, 45, 45, 255};
 
 int main(void) {
   InitWindow(WIDTH, HEIGHT, "fouralizer - Fourier Series Visualizer");
   renderTexture = LoadRenderTexture(WIDTH / screen1Width, HEIGHT);
+  graph1RenderTexture =
+      LoadRenderTexture(WIDTH / graph1Width, HEIGHT / graph1Height);
+  graph2RenderTexture =
+      LoadRenderTexture(WIDTH / graph2Width, HEIGHT / graph2Height);
 
   camera.position = (Vector3){-2, .5, 3};
-  camera.target = (Vector3){0, .0, 0};
+  camera.target = ZEROVEC3;
   camera.projection = CAMERA_PERSPECTIVE;
   camera.fovy = 60;
   camera.up = (Vector3){0, 1, 0};
 
-  pointSinPos = (Vector3){0, 0, 0};
-  pointCosPos = (Vector3){AMPLITUDE, 0, 0};
-  pointFuncPos = (Vector3){AMPLITUDE, 0, 0};
+  cameraStatic.position = (Vector3){0, 10, 0};
+  cameraStatic.target = (Vector3){0, 0, 0};
+  cameraStatic.projection = CAMERA_PERSPECTIVE; // Perspective projection
+  cameraStatic.fovy = 60;
+  cameraStatic.up = (Vector3){0, 0, -1};
+
+  pointSinPos = ZEROVEC3;
+  pointCosPos = ZEROVEC3;
+  pointFuncPos = ZEROVEC3;
 
   for (int i = 0; i < TOTAL_POINTS; i++) {
     sinPoints[i] = pointSinPos;
@@ -102,6 +125,8 @@ int main(void) {
     }
 
     BeginDrawing();
+    ClearBackground(bg);
+
     BeginTextureMode(renderTexture);
     ClearBackground(bg);
     DrawFPS(10, HEIGHT - 35);
@@ -116,6 +141,35 @@ int main(void) {
     DrawHelp();
     EndTextureMode();
 
+    BeginTextureMode(graph1RenderTexture);
+    ClearBackground(BLACK);
+    BeginMode3D(cameraStatic);
+    DrawGrid(10, 1);
+    EndMode3D();
+    EndTextureMode();
+
+    BeginTextureMode(graph2RenderTexture);
+    ClearBackground(BLACK);
+    BeginMode3D(cameraStatic);
+    DrawGrid(10, 1);
+    EndMode3D();
+    EndTextureMode();
+
+    DrawTexturePro(graph1RenderTexture.texture,
+                   (Rectangle){0, 0, graph1RenderTexture.texture.width,
+                               -graph1RenderTexture.texture.height},
+                   (Rectangle){WIDTH / 2.0f, 0, WIDTH / graph1Width,
+                               -1 * HEIGHT / graph1Height},
+                   (Vector2){0, 0}, 0, WHITE);
+
+    DrawTexturePro(graph2RenderTexture.texture,
+                   (Rectangle){0, 0, graph2RenderTexture.texture.width,
+                               -graph2RenderTexture.texture.height},
+                   (Rectangle){WIDTH / 2.0f, HEIGHT / 2.0f, WIDTH / graph2Width,
+                               -1 * HEIGHT / graph2Height},
+                   (Vector2){0, 0}, 0, WHITE);
+
+    /* Keep this one at the very bottom, so in front */
     DrawTexturePro(renderTexture.texture,
                    (Rectangle){0, 0, renderTexture.texture.width,
                                -renderTexture.texture.height},
@@ -148,7 +202,6 @@ void DrawAxisLines() {
   DrawCircle3D((Vector3){0, 0, 0}, AMPLITUDE, (Vector3){0, 0, 0}, 0, WHITE);
 
   /* Distance lines */
-
   if (showCosine && showSine) {
     DrawLine3D(pointFuncPos, pointSinPos, WHITE);
     DrawLine3D(pointFuncPos, pointCosPos, WHITE);
@@ -243,7 +296,6 @@ void input() {
     } else {
       screen1Width = 2;
     }
-
     renderTexture = LoadRenderTexture(WIDTH / screen1Width, HEIGHT);
     break;
   case KEY_ONE:
