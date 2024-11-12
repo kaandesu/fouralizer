@@ -50,8 +50,15 @@ Vector3 pointSinPos;
 Vector3 pointCosPos;
 Vector3 pointFuncPos;
 
+RenderTexture renderTexture = {0};
+float screen1Width = 2.0f;
+bool fullwidth = false;
+
+Color bg = (Color){45, 45, 45, 255};
+
 int main(void) {
   InitWindow(WIDTH, HEIGHT, "fouralizer - Fourier Series Visualizer");
+  renderTexture = LoadRenderTexture(WIDTH / screen1Width, HEIGHT);
 
   camera.position = (Vector3){-2, .5, 3};
   camera.target = (Vector3){0, .0, 0};
@@ -63,8 +70,6 @@ int main(void) {
   pointCosPos = (Vector3){AMPLITUDE, 0, 0};
   pointFuncPos = (Vector3){AMPLITUDE, 0, 0};
 
-  Color bg = (Color){45, 45, 45, 255};
-
   for (int i = 0; i < TOTAL_POINTS; i++) {
     sinPoints[i] = pointSinPos;
     cosPoints[i] = pointCosPos;
@@ -73,15 +78,8 @@ int main(void) {
 
   while (!WindowShouldClose()) {
     UpdateCamera(&camera, CAMERA_FIRST_PERSON);
-    BeginDrawing();
-    ClearBackground(bg);
-    DrawFPS(10, HEIGHT - 35);
 
-    BeginMode3D(camera);
-    if (showGrid)
-      DrawGrid(20, 1);
     currentTime = GetTime();
-
     rotation -= freq_d * GetFrameTime();
 
     /* Update point positions based on sine and cosine functions
@@ -96,10 +94,6 @@ int main(void) {
     pointFuncPos.y = pointSinPos.y;
     pointFuncPos.x = pointCosPos.x;
 
-    DrawWaveIndicators();
-
-    DrawAxisLines();
-
     /* Shift points and add new positions in 60fps ideally */
     frameNum++;
     if (frameNum >= GetFPS() * 2 / 60) {
@@ -107,13 +101,28 @@ int main(void) {
       frameNum = 0;
     }
 
+    BeginDrawing();
+    BeginTextureMode(renderTexture);
+    ClearBackground(bg);
+    DrawFPS(10, HEIGHT - 35);
+    BeginMode3D(camera);
+    if (showGrid)
+      DrawGrid(20, 1);
+    DrawWaveIndicators();
+    DrawAxisLines();
     /* Draw continuous sine & cosine wave */
     DrawWaves();
-
     EndMode3D();
-    EndDrawing();
-
     DrawHelp();
+    EndTextureMode();
+
+    DrawTexturePro(renderTexture.texture,
+                   (Rectangle){0, 0, renderTexture.texture.width,
+                               -renderTexture.texture.height},
+                   (Rectangle){0, 0, WIDTH / screen1Width, -1 * HEIGHT},
+                   (Vector2){0, 0}, 0, WHITE);
+
+    EndDrawing();
     input();
   }
   CloseWindow();
@@ -227,6 +236,16 @@ void DrawHelp() {
 
 void input() {
   switch (GetKeyPressed()) {
+  case KEY_F:
+    fullwidth = !fullwidth;
+    if (fullwidth) {
+      screen1Width = 1;
+    } else {
+      screen1Width = 2;
+    }
+
+    renderTexture = LoadRenderTexture(WIDTH / screen1Width, HEIGHT);
+    break;
   case KEY_ONE:
     showCosine = !showCosine;
     break;
