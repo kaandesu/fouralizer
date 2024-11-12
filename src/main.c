@@ -7,7 +7,7 @@
 
 #define WIDTH 1200
 #define HEIGHT 675
-#define OFFSET_UI 85
+#define OFFSET_UI 60
 #define PANEL_RATIO 2.0f
 #define FOVY 60
 #define UPVEC3                                                                 \
@@ -38,7 +38,7 @@ bool showSine = true;
 bool showCosine = true;
 bool showFunc = true;
 bool showGrid = true;
-bool showControls = true;
+bool showControls = false;
 
 Vector3 sinPoints[TOTAL_POINTS];
 Vector3 cosPoints[TOTAL_POINTS];
@@ -308,9 +308,12 @@ void DrawHelp() {
   DrawText(TextFormat("Signal Frequency: %.2f", FREQUENCY), 10, 60, 15, WHITE);
   DrawText("https://github.com/kaandesu/fouralizer", WIDTH - 325, HEIGHT - 30,
            15, RAYWHITE);
-  if (!showControls)
+  if (!showControls) {
+    DrawText("Press 'H' to open help", 10, 35 + OFFSET_UI, 16, WHITE);
     return;
-  DrawText("Help:", 10, 35 + OFFSET_UI, 16, WHITE);
+  }
+  DrawRectangle(5, 30 + OFFSET_UI, 210, 330, (Color){100, 100, 100, 100});
+  DrawText("Help: Press 'H' to close", 10, 35 + OFFSET_UI, 16, WHITE);
   DrawText("Left: Decrease Spin Freq", 10, 60 + OFFSET_UI, 15, lightGreen);
   DrawText("Right: Increase Spin Freq", 10, 80 + OFFSET_UI, 15, lightRed);
   DrawText("Up: Increase Camera Y ", 10, 105 + OFFSET_UI, 15, lightGreen);
@@ -322,6 +325,9 @@ void DrawHelp() {
   DrawText("1: Toggle Real Part ", 10, 230 + OFFSET_UI, 15, YELLOW);
   DrawText("2: Toggle Imag Part", 10, 250 + OFFSET_UI, 15, RED);
   DrawText("3: Toggle Combined", 10, 270 + OFFSET_UI, 15, GREEN);
+  DrawText("F: Toggle 3D Panel fullwidth", 10, 290 + OFFSET_UI, 15, LIGHTGRAY);
+  DrawText("L: Close Fouralizer", 10, 310 + OFFSET_UI, 15, LIGHTGRAY);
+  DrawText("Esc: Close Fouralizer", 10, 330 + OFFSET_UI, 15, LIGHTGRAY);
 }
 
 void input() {
