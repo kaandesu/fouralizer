@@ -15,7 +15,7 @@
 #define ZEROVEC3                                                               \
   (Vector3) { 0, 0, 0 }
 
-float FREQUENCY = 5.0f;
+float FREQUENCY = 1.0f;
 float AMPLITUDE = 1.0f;
 
 #define TOTAL_POINTS 300
@@ -39,6 +39,7 @@ bool showCosine = true;
 bool showFunc = true;
 bool showGrid = true;
 bool showControls = false;
+bool lockCursorAndCam = false;
 
 Vector3 sinPoints[TOTAL_POINTS];
 Vector3 cosPoints[TOTAL_POINTS];
@@ -112,26 +113,31 @@ int main(void) {
   }
 
   while (!WindowShouldClose()) {
-    UpdateCamera(&camera, CAMERA_FIRST_PERSON);
+    if (lockCursorAndCam)
+      UpdateCamera(&camera, CAMERA_FIRST_PERSON);
 
     currentTime = GetTime();
-    rotation -= freq_d * GetFrameTime();
+    rotation -= freq_d * GetFrameTime() * 2 * PI;
 
     /* Update point positions based on sine and cosine functions
      * with the rotation matrix
      */
-    pointSinPos.x = AMPLITUDE * -sin(rotation) * sin(currentTime * FREQUENCY);
-    pointSinPos.y = AMPLITUDE * cos(rotation) * sin(currentTime * FREQUENCY);
+    pointSinPos.x =
+        AMPLITUDE * -sin(rotation) * sin(currentTime * FREQUENCY * 2 * PI);
+    pointSinPos.y =
+        AMPLITUDE * cos(rotation) * sin(currentTime * FREQUENCY * 2 * PI);
 
-    pointCosPos.x = AMPLITUDE * cos(currentTime * FREQUENCY) * cos(rotation);
-    pointCosPos.y = AMPLITUDE * cos(currentTime * FREQUENCY) * sin(rotation);
+    pointCosPos.x =
+        AMPLITUDE * cos(currentTime * FREQUENCY * 2 * PI) * cos(rotation);
+    pointCosPos.y =
+        AMPLITUDE * cos(currentTime * FREQUENCY * 2 * PI) * sin(rotation);
 
     pointFuncPos.y = pointSinPos.y;
     pointFuncPos.x = pointCosPos.x;
 
     /* Shift points and add new positions in 60fps ideally */
     frameNum++;
-    if (frameNum >= GetFPS() * 2 / 60) {
+    if (frameNum >= GetFPS() * 1 / 60) {
       AddShiftWavePoints();
       frameNum = 0;
     }
@@ -185,24 +191,26 @@ int main(void) {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
 
-    DrawTexturePro(graph1RenderTexture.texture,
-                   (Rectangle){0, 0,
-                               graph1RenderTexture.texture.width - 2 * padding,
-                               -graph1RenderTexture.texture.height},
-                   (Rectangle){padding + (screenWidth / 2.0f), padding,
-                               (screenWidth / graph1Width) - 2 * padding,
-                               (-1 * screenHeight / graph1Height) + (padding)},
-                   (Vector2){0, 0}, 0, WHITE);
+    if (!fullwidth) {
+      DrawTexturePro(
+          graph1RenderTexture.texture,
+          (Rectangle){0, 0, graph1RenderTexture.texture.width - 2 * padding,
+                      -graph1RenderTexture.texture.height},
+          (Rectangle){padding + (screenWidth / 2.0f), padding,
+                      (screenWidth / graph1Width) - 2 * padding,
+                      (-1 * screenHeight / graph1Height) + (padding)},
+          (Vector2){0, 0}, 0, WHITE);
 
-    DrawTexturePro(
-        graph2RenderTexture.texture,
-        (Rectangle){1, 0, graph2RenderTexture.texture.width - 2 * padding,
-                    -graph2RenderTexture.texture.height},
-        (Rectangle){padding + (screenWidth / 2.0f),
-                    (screenHeight / 2.0f) + padding,
-                    (screenWidth / graph2Width) - 2 * padding,
-                    (-1 * screenHeight / graph2Height) + (2 * padding)},
-        (Vector2){0, 0}, 0, WHITE);
+      DrawTexturePro(
+          graph2RenderTexture.texture,
+          (Rectangle){1, 0, graph2RenderTexture.texture.width - 2 * padding,
+                      -graph2RenderTexture.texture.height},
+          (Rectangle){padding + (screenWidth / 2.0f),
+                      (screenHeight / 2.0f) + padding,
+                      (screenWidth / graph2Width) - 2 * padding,
+                      (-1 * screenHeight / graph2Height) + (2 * padding)},
+          (Vector2){0, 0}, 0, WHITE);
+    }
 
     /* Keep this one at the very bottom, so in front */
     DrawTexturePro(renderTexture.texture,
@@ -312,7 +320,7 @@ void DrawHelp() {
     DrawText("Press 'H' to open help", 10, 35 + OFFSET_UI, 16, WHITE);
     return;
   }
-  DrawRectangle(5, 30 + OFFSET_UI, 210, 330, (Color){100, 100, 100, 100});
+  DrawRectangle(5, 30 + OFFSET_UI, 210, 350, (Color){100, 100, 100, 100});
   DrawText("Help: Press 'H' to close", 10, 35 + OFFSET_UI, 16, WHITE);
   DrawText("Left: Decrease Spin Freq", 10, 60 + OFFSET_UI, 15, lightGreen);
   DrawText("Right: Increase Spin Freq", 10, 80 + OFFSET_UI, 15, lightRed);
@@ -326,8 +334,8 @@ void DrawHelp() {
   DrawText("2: Toggle Imag Part", 10, 250 + OFFSET_UI, 15, RED);
   DrawText("3: Toggle Combined", 10, 270 + OFFSET_UI, 15, GREEN);
   DrawText("F: Toggle 3D Panel fullwidth", 10, 290 + OFFSET_UI, 15, LIGHTGRAY);
-  DrawText("L: Close Fouralizer", 10, 310 + OFFSET_UI, 15, LIGHTGRAY);
-  DrawText("Esc: Close Fouralizer", 10, 330 + OFFSET_UI, 15, LIGHTGRAY);
+  DrawText("Esc: Close Fouralizer", 10, 310 + OFFSET_UI, 15, LIGHTGRAY);
+  DrawText("L: (Un)Lock Cursor & Cam", 10, 330 + OFFSET_UI, 15, LIGHTGRAY);
 }
 
 void input() {
@@ -366,6 +374,14 @@ void input() {
     break;
   case KEY_DOWN:
     camera.position.y -= 0.5;
+    break;
+  case KEY_L:
+    lockCursorAndCam = !lockCursorAndCam;
+    if (lockCursorAndCam) {
+      DisableCursor();
+    } else {
+      EnableCursor();
+    }
     break;
   case KEY_H:
     showControls = !showControls;
