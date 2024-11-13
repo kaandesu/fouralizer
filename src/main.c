@@ -77,7 +77,6 @@ int screenWidth, screenHeight;
 
 int main(void) {
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-
   SetTargetFPS(60);
   InitWindow(WIDTH, HEIGHT, "fouralizer - Fourier Series Visualizer");
   // DisableCursor();
@@ -113,6 +112,7 @@ int main(void) {
     funcPoints[i] = pointFuncPos;
   }
 
+  float s_t = 1;
   while (!WindowShouldClose()) {
     if (lockCursorAndCam)
       UpdateCamera(&camera, CAMERA_FIRST_PERSON);
@@ -124,14 +124,12 @@ int main(void) {
      * with the rotation matrix
      */
     pointSinPos.x =
-        AMPLITUDE * -sin(rotation) * sin(currentTime * FREQUENCY * 2 * PI);
+        -sin(rotation) * sin(currentTime * FREQUENCY * 2 * PI) * -s_t;
     pointSinPos.y =
-        AMPLITUDE * cos(rotation) * sin(currentTime * FREQUENCY * 2 * PI);
+        cos(rotation) * sin(currentTime * FREQUENCY * 2 * PI) * -s_t;
 
-    pointCosPos.x =
-        AMPLITUDE * cos(currentTime * FREQUENCY * 2 * PI) * cos(rotation);
-    pointCosPos.y =
-        AMPLITUDE * cos(currentTime * FREQUENCY * 2 * PI) * sin(rotation);
+    pointCosPos.x = cos(currentTime * FREQUENCY * 2 * PI) * cos(rotation) * s_t;
+    pointCosPos.y = cos(currentTime * FREQUENCY * 2 * PI) * sin(rotation) * s_t;
 
     pointFuncPos.y = pointSinPos.y;
     pointFuncPos.x = pointCosPos.x;
@@ -248,7 +246,6 @@ void DrawAxisLines() {
   DrawCircle3D((Vector3){0, 0, 0}, AMPLITUDE, (Vector3){0, 0, 0}, 0, WHITE);
 
   /* Distance lines */
-  if (showCosine && showSine) {
   if (showCosine && showSine && showFunc) {
     DrawLine3D(pointFuncPos, pointSinPos, WHITE);
     DrawLine3D(pointFuncPos, pointCosPos, WHITE);
