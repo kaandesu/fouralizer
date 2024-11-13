@@ -259,7 +259,7 @@ void AddNewVector(Vector3 *vector3, Vector3 new) {
 void ShiftVector3By(Vector3 *vector3) {
   for (int i = 1; i < TOTAL_POINTS; i++) {
     vector3[i - 1] = vector3[i];
-    vector3[i - 1].z -= 0.02;
+    vector3[i - 1].z -= 1.0f / GetFPS();
   }
 }
 
