@@ -78,6 +78,7 @@ int screenWidth, screenHeight;
 int main(void) {
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
+  SetTargetFPS(60);
   InitWindow(WIDTH, HEIGHT, "fouralizer - Fourier Series Visualizer");
   // DisableCursor();
   renderTexture = LoadRenderTexture(WIDTH / screen1Width, HEIGHT);
@@ -248,14 +249,10 @@ void DrawAxisLines() {
 
   /* Distance lines */
   if (showCosine && showSine) {
+  if (showCosine && showSine && showFunc) {
     DrawLine3D(pointFuncPos, pointSinPos, WHITE);
     DrawLine3D(pointFuncPos, pointCosPos, WHITE);
   }
-}
-
-float CustomFunction(float t) {
-  // Example: Combine multiple sine functions
-  return sin(2 * PI * 3 * t) + sin(2 * PI * 6 * t);
 }
 
 void AddNewVector(Vector3 *vector3, Vector3 new) {
